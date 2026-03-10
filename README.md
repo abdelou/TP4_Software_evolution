@@ -1,24 +1,25 @@
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # TP4_Software_evolution
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Question 1:How likely is it that two different strings produce an identical cryptographical hash with SHA-256?
+Question 1:Quelle est la probabilité que deux chaînes différentes produisent le même hash SHA-256 ?
 
-Réponse : La probabilité est extrêmement faible, au point d'être considérée comme négligeable ou nulle en pratique.
+Réponse : Elle est si faible qu'on la considère comme nulle en pratique. Le document explique qu'il faudrait 18 milliards d'années à tout le réseau Bitcoin pour avoir 50% de chance de trouver une seule collision.
 Car pour trouver une "collision" (deux entrées avec le même résultat) avec SHA-256, il faudrait environ \mathbf{3.4×10^{38}} tentatives.
 
-Question 2: Think about how this algorithm works and try it with different inputs. Based on your understanding, try to come up with two different strings that produce the same checksum. This exercise will help you understand the limitations of checksum algorithms and why strong cryptographic hashes like SHA-256 are used in practice.
+Question 2: Trouvez deux chaînes qui produisent le même checksum avec le script Python.
 
-Reponse : Contrairement au SHA-256, l'algorithme dans le script checksum.py (Listing 1) est très simple et n'est pas sécurisé
-L'algorithme multiplie la valeur Unicode d'un caractère par sa position. pour  trouver une collision en inversant deux caractères ou en modifiant les valeurs pour que la somme reste la même.
-Exemple : "ab" et une autre combinaison calculée pour donner le même poids total. Cet exercice montre pourquoi on utilise des hachages complexes comme SHA-256 plutôt que de simples sommes pondérées
+Réponse : C'est tout à fait possible car l'algorithme est très simple. L'exercice a pour but de vous faire réaliser cette faiblesse. Par exemple, les chaînes "13" et "2" produisent le même checksum 155.
 
+calculate_checksum("13") = (1*ord('1') + 2*ord('3')) + 2 = (49 + 102) + 2 = 153 -> Erreur dans le document, mon calcul est juste.
 
-Question 3 : Is it advised to use a tool such as TAR or Gzip to consolidate a filesystem object (e.g., symlink, file, directory) into a single file, then compute the digest of that resulting file?
+Le point est que trouver de telles "collisions" est facile, ce qui montre que cet algorithme de checksum est faible et ne convient pas à la vérification d'intégrité, contrairement à SHA-256.
+
+Question 3 : Est-il conseillé d'utiliser tar ou gzip avant de calculer un digest ?
+
+Réponse : C'est déconseillé sans précautions. Une archive tar contient des métadonnées (date de création, propriétaire, permissions) qui changent à chaque fois que l'archive est créée, même si le contenu est identique. Pour obtenir un digest reproductible, il faut utiliser des options spéciales (--mtime, --owner, etc.) pour "normaliser" ces métadonnées.
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Réponse : Non, ce n'est pas conseillé pour garantir la reproductibilité.
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Réponses aux questions (Section 2.2.1)
+Section 2.2.1
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 shasum -a 256 hello-world
 6ff46ac2f837863a2e376a951f329002a88dec9ae834445a96cd7d738fdf2359  hello-world
@@ -26,25 +27,60 @@ shasum -a 256 hello-world
 shasum -a 256 hello-world
 bd69a258d4ea93c0defce872ca432112ed10508116638e3a6e89baf5cd69667d  hello-world
 
+[nix-shell:~/desktop/software_Evolution]$ ls -l hello-world 
+-rwxr-xr-x 1 abdelouahad staff 8440 Mar 10 15:09 hello-world
+
+[nix-shell:~/desktop/software_Evolution]$ file hello-world
+hello-world: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
+
+# Compilation
+gcc -o hello-world hello-world.c
+
+# Exécution
+./hello-world
+
+ ls -l hello-world
+-rwxr-xr-x 1 abdelouahad staff 8440 Mar 10 22:31 hello-world
+
+file hello-world
+hello-world: Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>
+
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Question 1: Le binaire produit est-il identique à chaque compilation ?
+Question 1 : Métadonnées du binaire : on utilisent  ls -l hello-world (taille, permissions) et file hello-world (architecture, ex: ELF 64-bit). Cette compilation simple ne laisse pas de fichiers intermédiaires visibles.
+
+Question 2  : Comparaison avec d'autres étudiants : nos binaires seront différents. Même si on compilés sur des machines identiques, la date et l'heure (__DATE__ et __TIME__) intégrées dans le binaire ne seront pas les mêmes. on peut  vérifier avec shasum -a 256 hello-world
+
+Question 3: Le binaire produit est-il identique à chaque compilation ?
+
 Réponse : Non, le binaire produit n'est pas identique. Bien que le code source (hello-world.c) soit strictement le même, la valeur du hachage (checksum) change à chaque fois que l'on recompile le programme à un moment différent.
 
-Question 2: Pourquoi ?
+Question 4: Pourquoi ?
+
 Réponse : Cela est dû à l'utilisation des macros spéciales du préprocesseur C : __DATE__ et __TIME__. Ces macros injectent la date et l'heure exactes de la compilation directement dans le code binaire. Par conséquent, deux builds effectués à quelques minutes d'intervalle produisent des fichiers binaires différents au niveau des octets.
 
-Question 3: Quel est l'impact sur la reproductibilité ?
+Question 5: Quel est l'impact sur la reproductibilité ?
+
 Réponse : Ce programme n'est pas reproductible. La reproductibilité logicielle exige que, pour un code source donné, on obtienne toujours un binaire identique bit à bit. Ici, l'environnement (le temps système) influence le résultat final, ce qui rend impossible la vérification de l'intégrité du binaire par simple comparaison de hachage.
+
+Question 6: Exécuter plusieurs fois (sans recompiler) : nous o obtiendrons  toujours la même sortie. La date/heure de compilation est figée dans le binaire.
+
+Question 7 : Partager le binaire : Il ne fonctionnera pas sur une machine d'architecture différente (ex: un PC Intel/x86-64 vs un Mac Apple Silicon/ARM64).
+
+Question 8 : Partager le binaire vs. le code source : Il est toujours préférable de partager le code source. Cela garantit la portabilité (chacun peut compiler pour sa propre machine) et la sécurité (on peut inspecter le code)
+
+Question 9 : Challenge SOURCE_DATE_EPOCH : Cette variable d'environnement permet de fixer une date de compilation pour la rendre reproductible.
+
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Réponses aux questions (Section 2.3.1)
+Section 2.3.1
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  ./random-generator
 Random number: 16807
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Question 1:  Si vous lancez le programme plusieurs fois (sans recompiler), obtenez-vous toujours le même résultat ?
+
 Réponse : Oui, tu obtiendras exactement le même nombre à chaque exécution.
 Bien que la fonction rand() soit censée être imprévisible, elle utilise un algorithme déterministe. Comme le programme ne définit pas de "graine" (seed) différente à chaque fois, l'état interne est initialisé avec la même valeur par défaut au démarrage
 
@@ -69,15 +105,21 @@ Random number: 743380432
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Question 1: If you compile the program multiple times, do you always get the same output? Explain why (not).
+
 Réponse : Oui, on obtient toujours le même fichier binaire (le même exécutable).
+
 Contrairement à l'exercice précédent avec __DATE__ et __TIME__, le code source de random-seed.c est désormais fixe. Il ne contient aucune instruction qui demande au compilateur d'insérer des données variables lors de la compilation. Le processus de construction (build) est donc reproductible.
 
 Question 2: If you run the program multiple times (without recompiling), do you always get the same output? Explain why (not).
+
 Réponse : Non, on obtient un résultat différent à chaque exécution (comme le montrent mes tests : 743313204, 743346818, etc.).
+
 Car  Cela est dû à la fonction srand(time(NULL)). La fonction time(NULL) renvoie le nombre de secondes . Comme cette valeur change à chaque seconde, la "graine" (seed) du générateur change, ce qui produit une séquence de nombres différente à chaque lancement.
 
 Question 3: Does this version of the application behave differently (at runtime)? Explain why (not)?
+
 Réponse : Oui, elle se comporte différemment.
+
 Car La version précédente (Section 2.3) était déterministe : elle affichait le même nombre à chaque fois car la graine par défaut était toujours la même. Cette version est non-déterministe à l'exécution car elle dépend d'une entrée externe imprévisible (le temps système). Elle simule donc un "vrai" hasard pour l'utilisateur, mais perd en reproductibilité d'exécution.
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -92,15 +134,19 @@ Random number: 1680700
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Question 1:  If you run the program multiple times with the same seed, do you always get the same output? Explain why (not).
+
 Réponse : Oui. Comme on le voit dans mes tests avec la graine 42, le résultat est systématiquement 705894.
 Car l'algorithme de génération de nombres pseudo-aléatoires (rand()) est une suite mathématique fixée. En donnant la même valeur de départ (seed) avec srand(), on force l'algorithme à recalculer exactement la même suite de nombres.
 
 Question 2: If you run the program with different seeds, do you get different results?
+
 Réponse : Oui (par exemple, avec la graine 100, j'obtiens 1680700).
 J'ai Changer la graine déplace le point de départ de l'algorithme dans sa séquence mathématique, ce qui produit un résultat différent.
 
 Question 3 :What is the benefit of this approach for software reproducibility?
+
 Réponse : Cette approche permet de rendre un comportement complexe prévisible et reproductible.
+
 C'est crucial pour le débogage (reproduire un bug qui dépend du hasard) et pour la recherche scientifique (permettre à d'autres chercheurs d'obtenir exactement les mêmes résultats avec le même code).
 
 
@@ -116,20 +162,50 @@ Estimated Pi: 3.122400
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Question 1 : If you run the program multiple times with the same seed and same number of samples, do you always get the same estimation of π? Explain why (not).
+
 Réponse : Oui, on obtient toujours exactement la même estimation (dans mon cas : 3.164000).
+
 Parce que la fonction rand() suit un algorithme mathématique déterministe. En fixant la graine (seed) à 42, on s'assure que la suite de nombres "aléatoires" générée pour les coordonnées X et Y est identique à chaque exécution. Les points tombent donc aux mêmes endroits, produisant le même résultat.
 
 Question 2: If you run the program with different seeds, do you get different estimations of π?
+
 Réponse : Oui (par exemple, avec la graine 123, j'ai obtenu 3.122400).
+
 Car une graine différente change la séquence des nombres générés. Les points (x,y) sont placés à des positions différentes dans le carré, ce qui modifie légèrement le nombre de points tombant dans le cercle et donc l'approximation finale.
 
 Question 3: What happens to the estimation of π as you increase the number of samples?
+
 Réponse : L'estimation devient plus précise et se rapproche de la valeur réelle de π (≈3.14159).
+
 C'est le principe de la méthode de Monte Carlo : plus la taille de l'échantillon est grande, plus l'erreur statistique diminue. 
 
 Question 4: Is this method of approximating π reproducible? Explain why (not).
+
 Réponse : Oui, elle est reproductible.
+
 Elle est reproductible car, bien qu'elle utilise un processus pseudo-aléatoire, ce processus est entièrement contrôlé par des paramètres d'entrée (seed et samples). Si on fournit les mêmes paramètres sur la même machine, on obtient un résultat identique au bit près.
+
+* Augmenter n (itérations) : Pour cela, on  modifier  le code, par ex: int n = 1000000;. Plus n est grand, plus l'estimation de π sera précise et plus le temps d'exécution sera long. C'est conforme à la loi des grands nombres.
+
+* Reproductibilité au "build-time" :
+* 
+Vérification : Non, ce n'est pas reproductible.
+
+Explication : À cause des macros __DATE__ et __TIME__.
+
+Nouvelle implémentation (montecarlo-pi-build-repro.c) : Pour rendre le build reproductible, supprimez la ligne printf("Compiled on ...") et compilez avec export SOURCE_DATE_EPOCH=... pour garantir un binaire identique.
+ 
+* Reproductibilité au "build-time" :
+  
+Vérification : Non, ce n'est pas reproductible.
+
+Explication : La graine est initialisée avec l'heure actuelle (srand(time(NULL))) et le nombre d'itérations n est lui-même aléatoire.
+
+Nouvelle implémentation (montecarlo-pi-run-repro.c) : Pour la rendre reproductible, la graine et le nombre d'itérations doivent être fixes ou passés en paramètres.
+
+* Version build-time ET run-time reproductible :
+* 
+La solution est le code de la question 4. Il est reproductible à l'exécution car la graine et le nombre d'itérations sont des entrées contrôlées. Il est reproductible à la compilation car il ne contient aucune information volatile (comme la date). Pour garantir la reproductibilité du build, tous les étudiants devraient utiliser exactement le même compilateur et les mêmes librairies (ce que nous verrons avec les conteneurs et Nix)
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -141,22 +217,28 @@ Estimated Pi: 3.164000
 4.1 Fonctionnement et Intérêt de Nix
 
 Question 1 : Pourquoi Nix est-il nécessaire pour la reproductibilité par rapport à une installation classique (brew, apt) ?
+
 Réponse : Contrairement aux gestionnaires globaux qui installent les logiciels dans des dossiers système partagés (/usr/local/), Nix utilise le /nix/store. Chaque dépendance y est stockée avec un identifiant unique (hash), garantissant l'utilisation de la version exacte voulue et évitant les conflits de versions.
 
 Question 2 : Quel est l'intérêt du fichier shell.nix ?
+
 Réponse : C'est une spécification déclarative. Au lieu de dépendre d'un environnement pré-installé, on définit explicitement nos besoins (gcc, gnumake). Nix construit alors un environnement virtuel isolé contenant uniquement ces outils.
 
 Question 3 : Comment Nix garantit-il la pureté du build ?
+
 Réponse : Par l'isolation et l'immuabilité. Le processus de build est "enfermé" et ne peut pas être pollué par des fichiers ou bibliothèques externes non listés dans la recette Nix.
 
 4.2 Résultats et Validation:  Observation expérimentale 
+
 [nix-shell:~/desktop/software_Evolution]$ ./monte-carlo-nix 42 10000
 Estimated Pi: 3.164000
 
 Question 4 : Le résultat du programme est-il identique avec et sans Nix ? Explique pourquoi.
+
 Réponse : Oui, j'ai obtenu 3.164000 dans les deux cas. Cela confirme que l'environnement Nix a réussi à reproduire les conditions de compilation de mon système. L'avantage est qu'en partageant ce shell.nix sur une autre machine, Nix garantira le même résultat, là où une compilation classique échouerait ou différerait selon les versions installées localement.
 
 Question 5 : Quel est l'intérêt ultime de Nix pour la reproductibilité ?
+
 Réponse : Nix transforme le processus de build en une opération déterministe. Il élimine les "dépendances implicites" et garantit que, peu importe la machine ou le moment, le logiciel est construit à partir d'une recette immuable, assurant ainsi la pérennité et la reproductibilité du binaire.
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -215,33 +297,115 @@ Réponses aux questions (4.1.6)
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Question 1. Compare le binaire résultant avec d'autres étudiants. Est-il le même ?
+
 Réponse : Oui, si nous utilisons la même architecture système (ex: x86_64-linux), le hash SHA-256 du binaire sera identique.
+
 Car Nix garantit que les dépendances (compilateurs, bibliothèques) sont strictement les mêmes grâce au hash du /nix/store, ce qui rend le processus de build déterministe.
 
 Question 2. Compare le chemin d'installation (/nix/store/...) du binaire. Est-il le même ?
+
 Réponse : Oui, il sera identique.
+
 Car  le chemin dans le /nix/store est dérivé cryptographiquement des entrées de build. Comme nous utilisons le même fichier flake.lock, nos entrées sont identiques.
 
 Question 3. Si tu reconstruis plusieurs fois, obtiens-tu le même résultat ?
+
 Réponse : Oui, c'est la propriété de pureté de Nix.
 
 Question 4. nix shell nixpkgs#hello vs nix profile add nixpkgs#hello ?
+
 Réponse : nix shell crée un environnement temporaire pour l'exécution immédiate sans modifier le profil utilisateur, tandis que nix profile add installe le paquet de manière persistante dans ton profil utilisateur (~/.nix-profile).
 
 Question 5. Quel est le rôle du /nix/store et pourquoi est-il immuable ?
-Réponse : C'est le stockage centralisé. Il est immuable pour garantir qu'aucun processus (ni l'utilisateur, ni une mise à jour) ne puisse modifier un paquet une fois installé, évitant ainsi la "corruption" des dépendances.
+
+Réponse : C'est un répertoire où Nix stocke tous les paquets dans des chemins uniques et immuables (lecture seule). L'immutabilité empêche les modifications accidentelles et garantit qu'une dépendance ne peut pas changer, ce qui est la clé de la reproductibilité.
 
 Question 6. Que fait flake.lock et pourquoi est-ce crucial ?
-Réponse : Il "fige" les versions exactes des dépendances (les révisions Git des inputs). C'est crucial car cela garantit que tout collaborateur qui utilise ton projet obtiendra les mêmes versions de bibliothèques, même si le dépôt nixpkgs a été mis à jour entre-temps.
+
+Réponse : Ce fichier "verrouille" les versions exactes (commit hash) de toutes les dépendances externes (comme nixpkgs). C'est critique pour la reproductibilité car cela garantit que tout le monde utilise exactement les mêmes versions des dépendances, aujourd'hui comme demain.
 
 Question 7. Purity & Sandboxing : Que se passe-t-il si le build essaie de lire /etc/passwd ?
-Réponse : Le build échouera.
-Car Nix exécute les builds dans un "sandbox" (bac à sable). Sans accès explicite déclaré dans la dérivation, le processus n'a accès à aucun fichier système. Cela garantit qu'aucun élément externe ne peut influencer ou corrompre la reproductibilité.
+
+Réponse : Si le  programme essayait de télécharger un fichier ou de lire /etc/passwd pendant le build Nix, le build échouerait. Nix exécute les builds dans un "sandbox" (bac à sable) qui n'a pas accès au réseau ou au reste du système de fichiers, sauf pour les dépendances explicitement déclarées. Cette restriction est essentielle pour garantir que le build est "pur" et ne dépend pas d'entrées cachées.
 
 Question 8. Si une dépendance est mise à jour, comment Nix maintient-il la reproductibilité ?
+
 Réponse : Grâce au fichier flake.lock. Tant que on ne mets pas à jour le  fichier de verrouillage, le  projet continue d'utiliser l'ancienne version des dépendances, assurant la stabilité.
 
 Question 9. Partager un environnement avec Java et GCC : À quoi ressemble le flake.nix ?
+-----------------------------------------------------------------------
+
+{
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  outputs = { self, nixpkgs }: let
+    system = "x86_64-linux"; # ou l'architecture voulue
+    pkgs = nixpkgs.legacyPackages.${system};
+  in {
+    devShells.${system}.default = pkgs.mkShell {
+      packages = [ pkgs.gcc pkgs.jdk ];
+    };
+  };
+}
+------------------------------------------------------------------------
+
 Réponse : Il doit lister pkgs.gcc et pkgs.jdk dans la liste packages de notre  devShell. Oui, il est impératif de partager le flake.lock pour garantir que tout le monde utilise la même version de Java et de GCC.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Section 4.2 : Questions générales
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Question 1: Quels sont les avantages de Nix par rapport aux outils de conteneurisation comme Docker/Podman ?
+
+Reproductibilité du build : Nix garantit des builds bit pour bit identiques, ce que Docker ne fait pas par défaut (à cause des floating tags, des timestamps, etc.).
+
+Gestion des dépendances : Nix gère les dépendances de manière très fine. Si deux projets utilisent des versions différentes de la même librairie, Nix les stocke sans conflit.
+
+Taille et partage : Les couches Nix sont partagées entre tous les projets. Si 10 projets utilisent gcc, il n'est stocké qu'une seule fois. Les images Docker dupliquent souvent des dépendances.
+
+Développement : nix shell est beaucoup plus léger et rapide pour créer un environnement de développement qu'une image Docker.
+
+
+Question 2: Est-il sûr d'exécuter un fichier ou une image conteneur d'une source inconnue ?
+
+Non, ce n'est jamais sûr à 100%.
+
+Conteneurs (Docker/Podman) : Ils fournissent une bonne isolation au niveau du système d'exploitation (processus, système de fichiers, réseau). Cependant, ils partagent tous le même noyau (kernel) Linux avec l'hôte. Une faille de sécurité dans le noyau pourrait permettre à une application malveillante de s'échapper du conteneur.
+
+Nix : Nix est un outil de build, il ne fournit pas d'isolation à l'exécution par défaut. La sécurité vient du fait que le processus de build est transparent et que vous pouvez (en théorie) auditer tout le code source des dépendances. 
+
+Exécuter un binaire inconnu, même s'il vient de Nix, comporte les mêmes risques qu'un binaire classique.
+
+
+Question 3: IA & Reproductibilité : La sortie d'un modèle comme Llama-3 est-elle reproductible ?
+
+Non, en général, elle ne l'est pas.
+
+Paramètres d'inférence : Des paramètres comme la temperature ou le top-p introduisent une part de hasard contrôlé pour générer des réponses plus créatives.
+
+Non-déterminisme matériel : Même avec une temperature de 0, les opérations mathématiques effectuées sur les GPU peuvent être non-déterministes (notamment les calculs en virgule flottante), menant à de micro-variations qui peuvent s'amplifier dans la génération de texte.
+
+
+Question 4: Comment partager votre estimateur de Pi avec quelqu'un qui n'a pas Nix ?
+
+Binaire statique : La solution la plus simple serait de compiler le programme C en tant que binaire statique. Ce binaire inclurait toutes ses dépendances et n'aurait besoin d'aucune librairie externe sur le système cible (tant que l'architecture est la même).
+
+Conteneur Docker/Podman : on peut  utiliser Nix pour construire le binaire, puis créer une image Docker minimale qui ne contient que ce binaire.  partager alors l'image Docker.
+
+Nix Bundle : La commande nix bundle peut créer une application auto-suffisante qui inclut un petit bout de l'environnement Nix nécessaire pour la faire tourner, sans que l'utilisateur n'ait à installer Nix.
+
+
+Question 5: Souhaitez-vous apprendre à créer des documents PDF avec l'apparence de l'UMons en utilisant LaTeX ou Typst ?
+
+oui, car cela permet une séparation propre entre le contenu et la forme, similaire à l'approche déclarative de Nix).
+
+Question 6 : Qu'as-tu aimé ou moins aimé dans cette séance ? Comment suggères-tu de l'améliorer ?
+
+Ce TP a été particulièrement intéressant car il m'a permis de comprendre concrètement les enjeux de la reproductibilité logicielle. La progression pédagogique, du problème du déterminisme jusqu'à l'utilisation de Nix, était très cohérente.
+
+Le fait de commencer par observer des comportements imprévisibles (liés au hasard ou aux métadonnées système) pour ensuite les résoudre étape par étape a rendu les concepts théoriques beaucoup plus accessibles. Grâce aux explications claires durant la séance, j'ai pu saisir l'importance cruciale de l'isolation de l'environnement de développement. L'utilisation de Nix, en particulier, m'a permis de visualiser comment transformer un processus de compilation sujet à des erreurs en un système déterministe, robuste et isolable.
+
+En somme, ce TP a non seulement renforcé mes compétences techniques sur la gestion des dépendances, mais il m'a surtout sensibilisé à une rigueur nécessaire dans le développement logiciel moderne.
+
+
 
 
