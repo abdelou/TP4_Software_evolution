@@ -102,7 +102,20 @@ Question 3 :What is the benefit of this approach for software reproducibility?
 Réponse : Cette approche permet de rendre un comportement complexe prévisible et reproductible.
 C'est crucial pour le débogage (reproduire un bug qui dépend du hasard) et pour la recherche scientifique (permettre à d'autres chercheurs d'obtenir exactement les mêmes résultats avec le même code).
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Réponses aux questions (Section 2.6.1)
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+./monte-carlo 42 10000
+Estimated Pi: 3.164000
+ ./monte-carlo 42 10000
+Estimated Pi: 3.164000
+./monte-carlo 123 10000
+Estimated Pi: 3.122400
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Question 1 : If you run the program multiple times with the same seed and same number of samples, do you always get the same estimation of π? Explain why (not).
+Réponse : Oui, on obtient toujours exactement la même estimation (dans mon cas : 3.164000).
+Parce que la fonction rand() suit un algorithme mathématique déterministe. En fixant la graine (seed) à 42, on s'assure que la suite de nombres "aléatoires" générée pour les coordonnées X et Y est identique à chaque exécution. Les points tombent donc aux mêmes endroits, produisant le même résultat.
 
 
 
