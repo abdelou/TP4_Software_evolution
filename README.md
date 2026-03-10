@@ -117,6 +117,12 @@ Question 1 : If you run the program multiple times with the same seed and same n
 Réponse : Oui, on obtient toujours exactement la même estimation (dans mon cas : 3.164000).
 Parce que la fonction rand() suit un algorithme mathématique déterministe. En fixant la graine (seed) à 42, on s'assure que la suite de nombres "aléatoires" générée pour les coordonnées X et Y est identique à chaque exécution. Les points tombent donc aux mêmes endroits, produisant le même résultat.
 
+Question 2: If you run the program with different seeds, do you get different estimations of π?
+Réponse : Oui (par exemple, avec la graine 123, j'ai obtenu 3.122400).
+Car une graine différente change la séquence des nombres générés. Les points (x,y) sont placés à des positions différentes dans le carré, ce qui modifie légèrement le nombre de points tombant dans le cercle et donc l'approximation finale.
+
+
+
 
 
 
