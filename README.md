@@ -121,6 +121,10 @@ Question 2: If you run the program with different seeds, do you get different es
 Réponse : Oui (par exemple, avec la graine 123, j'ai obtenu 3.122400).
 Car une graine différente change la séquence des nombres générés. Les points (x,y) sont placés à des positions différentes dans le carré, ce qui modifie légèrement le nombre de points tombant dans le cercle et donc l'approximation finale.
 
+Question 3: What happens to the estimation of π as you increase the number of samples?
+Réponse : L'estimation devient plus précise et se rapproche de la valeur réelle de π (≈3.14159).
+C'est le principe de la méthode de Monte Carlo : plus la taille de l'échantillon est grande, plus l'erreur statistique diminue. 
+
 
 
 
