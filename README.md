@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # TP4_Software_evolution
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Question 1:How likely is it that two different strings produce an identical cryptographical hash with SHA-256?
+Question 1:How likely is it that two different strings produce an identical cryptographical hash with SHA-256?\\
 Réponse : La probabilité est extrêmement faible, au point d'être considérée comme négligeable ou nulle en pratique.
 Car pour trouver une "collision" (deux entrées avec le même résultat) avec SHA-256, il faudrait environ \mathbf{3.4×10^{38}} tentatives.
 
